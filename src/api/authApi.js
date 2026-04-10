@@ -92,8 +92,13 @@ apiClient.interceptors.response.use(
  * @param {string} email
  * @param {string} password
  */
-export const register = (email, password) =>
-  apiClient.post('/api/v1/auth/register', { email, password });
+export const register = (name, email, password, confirmPassword) =>
+  apiClient.post('/api/v1/auth/register', {
+    name,
+    email,
+    password,
+    confirm_password: confirmPassword,
+  });
 
 /**
  * Log in with email and password.
@@ -104,6 +109,16 @@ export const register = (email, password) =>
  */
 export const login = (email, password) =>
   apiClient.post('/api/v1/auth/login', { email, password });
+
+export const adminLogin = (email, password, adminPasscode) =>
+  apiClient.post('/api/v1/auth/admin-login', {
+    email,
+    password,
+    admin_passcode: adminPasscode,
+  });
+
+export const serviceLogin = (email, password) =>
+  apiClient.post('/api/v1/auth/service-login', { email, password });
 
 /**
  * Exchange the HTTP-only refresh token cookie for a new access token.

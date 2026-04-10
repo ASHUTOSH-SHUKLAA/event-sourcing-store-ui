@@ -16,3 +16,13 @@ export const getProfile = () =>
  */
 export const updateProfile = (displayName) =>
   apiClient.put('/api/v1/users/me', { display_name: displayName });
+
+/**
+ * Change the authenticated user's password.
+ */
+export const changePassword = (currentPassword, newPassword, confirmPassword) =>
+  apiClient.patch('/api/v1/users/me/password', {
+    current_password: currentPassword,
+    new_password: newPassword,
+    confirm_password: confirmPassword,
+  });

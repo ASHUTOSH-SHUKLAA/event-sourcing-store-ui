@@ -1,106 +1,79 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import AuthShell from '../components/AuthShell';
 import { useAuth } from '../context/useAuth';
 
-/**
- * Login page — email + password form.
- * On success stores the access token via AuthContext and redirects to /dashboard.
- * Displays an error message on 401 or any API failure.
- * Requirements 5.1, 5.2
- */
 function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+  const submit = async (event) => {
+    event.preventDefault();
     setLoading(true);
-
+    setError('');
     try {
-      await login(email, password);
-      navigate('/dashboard', { replace: true });
+      await login(form.email, form.password);
+      navigate('/app/home', { replace: true });
     } catch (err) {
-      const status = err.response?.status;
-      if (status === 401) {
-        setError('Invalid email or password.');
-      } else {
-        setError(err.response?.data?.error || 'Something went wrong. Please try again.');
-      }
+      setError(err.response?.data?.error || 'Login failed. Check your credentials.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={styles.container}>
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <h2 style={styles.title}>Sign in</h2>
-
-        {error && <p style={styles.error} role="alert">{error}</p>}
-
-        <label htmlFor="email" style={styles.label}>Email</label>
+    <AuthShell
+      title="Welcome back"
+      subtitle="Sign in to your Event Sound account."
+      footer={
+        <div className="flex items-center justify-between">
+          <p>
+            No account?{' '}
+            <Link className="font-semibold text-green-600 hover:text-green-700" to="/register">
+              Register
+            </Link>
+          </p>
+          <Link className="font-semibold text-green-600 hover:text-green-700" to="/admin-login">
+            Admin Login
+          </Link>
+        </div>
+      }
+    >
+      <form onSubmit={submit} className="space-y-4">
+        {error && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
         <input
-          id="email"
           type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email address"
+          value={form.email}
+          onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+          className="h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 text-sm text-[var(--text-primary)] placeholder:text-green-400 outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
           required
-          autoComplete="email"
-          style={styles.input}
         />
-
-        <label htmlFor="password" style={styles.label}>Password</label>
         <input
-          id="password"
           type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+          value={form.password}
+          onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
+          className="h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 text-sm text-[var(--text-primary)] placeholder:text-green-400 outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100 transition"
           required
-          autoComplete="current-password"
-          style={styles.input}
         />
-
-        <button type="submit" disabled={loading} style={styles.button}>
+        <button
+          type="submit"
+          disabled={loading}
+          className="h-11 w-full rounded-xl bg-green-500 font-semibold text-white hover:bg-green-600 transition disabled:opacity-60"
+        >
           {loading ? 'Signing in…' : 'Sign in'}
         </button>
-
-        <p style={styles.link}>
-          Don&apos;t have an account? <Link to="/register">Register</Link>
-        </p>
       </form>
-    </div>
+    </AuthShell>
   );
 }
-
-const styles = {
-  container: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: '100vh',
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.75rem',
-    width: '100%',
-    maxWidth: '360px',
-    padding: '2rem',
-    border: '1px solid #e2e8f0',
-    borderRadius: '8px',
-  },
-  title: { margin: '0 0 0.5rem', textAlign: 'center' },
-  label: { fontWeight: 500, fontSize: '0.9rem' },
-  input: { padding: '0.5rem 0.75rem', fontSize: '1rem', borderRadius: '4px', border: '1px solid #cbd5e0' },
-  button: { padding: '0.6rem', fontSize: '1rem', cursor: 'pointer', borderRadius: '4px' },
-  error: { color: '#c53030', margin: 0, fontSize: '0.9rem' },
-  link: { textAlign: 'center', fontSize: '0.9rem', margin: 0 },
-};
 
 export default LoginPage;
