@@ -1,43 +1,129 @@
 @import "tailwindcss";
 
 :root {
-  --background: #070a14;
-  --surface: #111827;
-  --surface-alt: #14203a;
-  --surface-strong: #1d2c45;
-  --surface-green: #0f3d27;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.16);
-  --text-primary: #e2e8f0;
+  --accent: #3b82f6;
+  --accent-strong: #2563eb;
+  --accent-soft: rgba(59, 130, 246, 0.14);
+  --green-500: var(--accent-strong);
+  --green-600: var(--accent);
+  --green-700: var(--accent-strong);
+  --danger-soft: rgba(239, 68, 68, 0.14);
+  --info-soft: rgba(59, 130, 246, 0.16);
+}
+
+[data-theme='dark'] {
+  --background: #0f172a;
+  --background-alt: #020617;
+  --surface: rgba(30, 41, 59, 0.4);
+  --surface-elevated: rgba(30, 41, 59, 0.8);
+  --surface-glass: rgba(15, 23, 42, 0.6);
+  --surface-strong: #1e293b;
+  --surface-alt: rgba(15, 23, 42, 0.4);
+  --surface-highlight: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+  --border: rgba(255, 255, 255, 0.05);
+  --border-strong: rgba(255, 255, 255, 0.1);
+  --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
-  --text-muted: #7c90ab;
-  --green-500: #22c55e;
-  --green-600: #16a34a;
-  --green-700: #15803d;
-  --shadow-soft: 0 22px 65px rgba(0, 0, 0, 0.18);
-  --shadow-card: 0 28px 80px rgba(0, 0, 0, 0.22);
-  --shadow-glow: 0 0 0 6px rgba(34, 197, 94, 0.16);
+  --text-muted: #64748b;
+  --text-contrast: #ffffff;
+  --ring: rgba(59, 130, 246, 0.4);
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 12px 40px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 0 1px rgba(59, 130, 246, 0.3);
+  --brand-tile-bg: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  --brand-tile-text: #ffffff;
+  --nav-icon-1: #60a5fa;
+  --nav-icon-1-bg: rgba(96, 165, 250, 0.15);
+  --nav-icon-2: #3b82f6;
+  --nav-icon-2-bg: rgba(59, 130, 246, 0.15);
+  --nav-icon-3: #2563eb;
+  --nav-icon-3-bg: rgba(37, 99, 235, 0.15);
+  --button-primary-bg: linear-gradient(135deg, #60a5fa, #2563eb);
+  --button-primary-hover: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  --button-secondary-bg: #1e293b;
+  --button-secondary-hover: #334155;
+  --button-secondary-text: #f8fafc;
+  --auth-sidebar-bg: linear-gradient(to bottom right, #1e1b4b, #312e81);
+  --auth-sidebar-border: rgba(99, 102, 241, 0.2);
+  --auth-sidebar-text: #f8fafc;
+  --auth-sidebar-muted: rgba(248, 250, 252, 0.6);
+  --auth-sidebar-accent: #60a5fa;
+  --hero-glow: radial-gradient(circle at top left, rgba(59, 130, 246, 0.12), transparent 40%),
+    radial-gradient(circle at bottom right, rgba(37, 99, 235, 0.08), transparent 40%),
+    #020617;
 }
 
-html {
-  background: radial-gradient(circle at top, rgba(34, 197, 94, 0.14), transparent 28%), radial-gradient(circle at 80% 10%, rgba(59, 130, 246, 0.08), transparent 18%), var(--background);
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-  background: var(--background);
-  color: var(--text-primary);
-  font-family: Inter, "Segoe UI", sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+[data-theme='light'] {
+  --background: #f8fafc;
+  --background-alt: #ffffff;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-glass: rgba(255, 255, 255, 0.9);
+  --surface-strong: #f1f5f9;
+  --surface-alt: #f1f5f9;
+  --surface-highlight: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(59, 130, 246, 0.05));
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-contrast: #ffffff;
+  --ring: rgba(37, 99, 235, 0.2);
+  --shadow-soft: 0 4px 12px rgba(15, 23, 42, 0.05);
+  --shadow-card: 0 10px 30px rgba(15, 23, 42, 0.08);
+  --shadow-glow: 0 0 0 1px rgba(37, 99, 235, 0.15);
+  --brand-tile-bg: linear-gradient(135deg, #60a5fa, #2563eb);
+  --brand-tile-text: #ffffff;
+  --nav-icon-1: #2563eb;
+  --nav-icon-1-bg: rgba(37, 99, 235, 0.1);
+  --nav-icon-2: #3b82f6;
+  --nav-icon-2-bg: rgba(59, 130, 246, 0.1);
+  --nav-icon-3: #60a5fa;
+  --nav-icon-3-bg: rgba(96, 165, 250, 0.1);
+  --button-primary-bg: linear-gradient(135deg, #60a5fa, #2563eb);
+  --button-primary-hover: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  --button-secondary-bg: #ffffff;
+  --button-secondary-hover: #eff6ff;
+  --button-secondary-text: #1e293b;
+  --auth-sidebar-bg: linear-gradient(to bottom right, #f1f5f9, #e2e8f0);
+  --auth-sidebar-border: #cbd5e1;
+  --auth-sidebar-text: #0f172a;
+  --auth-sidebar-muted: #475569;
+  --auth-sidebar-accent: #2563eb;
+  --hero-glow: radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 60%),
+    radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.06), transparent 60%),
+    #ffffff;
 }
 
 * {
   box-sizing: border-box;
 }
 
-button, input, textarea, select {
+html {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.12), transparent 24%),
+    radial-gradient(circle at 100% 0%, rgba(139, 92, 246, 0.1), transparent 22%),
+    var(--background);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+    var(--background);
+  color: var(--text-primary);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 180ms ease, color 180ms ease;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+button,
+input,
+textarea,
+select {
   font: inherit;
 }
 
@@ -51,6 +137,22 @@ a {
 }
 
 ::selection {
-  background: rgba(34, 197, 94, 0.24);
+  background: rgba(99, 102, 241, 0.24);
   color: var(--text-primary);
+}
+
+button,
+input,
+textarea,
+select {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
 }
