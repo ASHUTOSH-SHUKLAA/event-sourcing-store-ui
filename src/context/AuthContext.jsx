@@ -4,9 +4,9 @@ import {
   login as apiUserLogin,
   logout as apiLogout,
   refresh as apiRefresh,
-  serviceLogin as apiServiceLogin,
   setAccessToken,
 } from '../api/authApi';
+import { getProfile } from '../api/userApi';
 
 const AuthContext = createContext(null);
 
@@ -15,6 +15,7 @@ const ROLE_KEY = 'app_role';
 export function AuthProvider({ children }) {
   const [accessToken, setToken] = useState(null);
   const [role, setRole] = useState(() => window.localStorage.getItem(ROLE_KEY) || '');
+  const [user, setUser] = useState(null);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
 
   const applyAuth = (response, fallbackRole) => {
@@ -24,6 +25,12 @@ export function AuthProvider({ children }) {
     setRole(nextRole);
     setAccessToken(token);
     window.localStorage.setItem(ROLE_KEY, nextRole);
+    
+    // Fetch profile immediately after login
+    getProfile().then(res => {
+      setUser(res.data?.data ?? res.data);
+    }).catch(() => {});
+
     return response;
   };
 
@@ -37,14 +44,12 @@ export function AuthProvider({ children }) {
     return applyAuth(response, 'admin');
   }, []);
 
-  const loginService = useCallback(async (email, password) => {
-    const response = await apiServiceLogin(email, password);
-    return applyAuth(response, 'provider');
-  }, []);
+
 
   const logout = useCallback(async () => {
     setToken(null);
     setRole('');
+    setUser(null);
     setAccessToken(null);
     window.localStorage.removeItem(ROLE_KEY);
     await apiLogout();
@@ -66,9 +71,22 @@ export function AuthProvider({ children }) {
         if (!isMounted) {
           return;
         }
-        const token = response.data.data.access_token;
+        const token = response.data?.data?.access_token;
+        if (!token) {
+          setIsBootstrapping(false);
+          return;
+        }
+
         setToken(token);
         setAccessToken(token);
+        
+        // Fetch profile if we have a token
+        getProfile().then(res => {
+          if (isMounted) {
+            setUser(res.data?.data ?? res.data);
+          }
+        }).catch(() => {});
+
         if (!window.localStorage.getItem(ROLE_KEY)) {
           window.localStorage.setItem(ROLE_KEY, 'user');
           setRole('user');
@@ -99,11 +117,12 @@ export function AuthProvider({ children }) {
       value={{
         accessToken,
         role,
+        user,
+        setUser,
         isAuthenticated: Boolean(accessToken),
         isBootstrapping,
         login,
         loginAdmin,
-        loginService,
         logout,
         refreshToken,
       }}

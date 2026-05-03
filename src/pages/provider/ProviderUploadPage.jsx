@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import AppShell from '../../components/layout/AppShell';
-import UserPill from '../../components/common/UserPill';
+import HeaderActions from '../../components/common/HeaderActions';
 import { uploadProviderSong } from '../../api/appApi';
 
 const navItems = [
@@ -26,34 +26,34 @@ function ProviderUploadPage() {
   };
 
   return (
-    <AppShell navItems={navItems} rightSlot={<UserPill label="C" />}>
+    <AppShell navItems={navItems} rightSlot={<HeaderActions pillLabel="C" />}>
       <div className="mx-auto max-w-4xl">
-        <h2 className="text-6xl font-semibold text-[var(--text-primary)]">Upload Song</h2>
-        <p className="mt-2 text-3xl text-[var(--text-secondary)]">Add song details to your catalog</p>
-        <form onSubmit={submit} className="mt-8 rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-8 shadow-[var(--shadow-soft)]">
+        <h2 className="text-3xl font-semibold text-[var(--text-primary)] sm:text-4xl lg:text-5xl">Upload Song</h2>
+        <p className="mt-2 text-base text-[var(--text-secondary)] sm:text-lg">Add song details to your catalog</p>
+        <form onSubmit={submit} className="mt-8 rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)] sm:p-8">
           <div className="space-y-6">
             {[
-              ['title', 'Song Title', false],
-              ['artist', 'Artist Name', false],
-              ['album', 'Album Name', true],
-              ['genre', 'Genre', true],
-              ['release_year', 'Release Year', true],
+              ['title', 'Song Title'],
+              ['artist', 'Artist Name'],
+              ['album', 'Album Name'],
+              ['genre', 'Genre'],
+              ['release_year', 'Release Year'],
             ].map(([key, label]) => (
               <label key={key} className="block">
-                <span className="text-3xl font-medium text-[var(--text-primary)]">{label}</span>
+                <span className="text-base font-medium text-[var(--text-primary)] sm:text-lg">{label}</span>
                 <input
                   value={form[key]}
                   onChange={(e) => setForm((prev) => ({ ...prev, [key]: e.target.value }))}
-                  className="mt-2 h-14 w-full rounded-2xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 text-2xl text-[var(--text-primary)] outline-none"
+                  className="mt-2 h-12 w-full rounded-2xl border border-[var(--border-strong)] bg-[var(--surface-elevated)] px-4 text-sm text-[var(--text-primary)] outline-none transition focus:border-[var(--accent-strong)] focus:ring-4 focus:ring-[var(--ring)] sm:h-14 sm:text-base"
                   required={key === 'title' || key === 'artist'}
                 />
               </label>
             ))}
           </div>
-          <button type="submit" className="mt-8 rounded-full bg-[var(--green-500)] px-8 py-3 text-2xl font-semibold text-black shadow-[var(--shadow-soft)] hover:bg-[var(--green-600)] transition">
+          <button type="submit" className="mt-8 rounded-full bg-[var(--accent-strong)] px-6 py-3 text-base font-semibold text-white shadow-[var(--shadow-soft)] transition hover:bg-[var(--accent)] sm:px-8 sm:text-lg">
             Upload
           </button>
-          {status && <p className="mt-3 text-xl text-[var(--green-500)]">{status}</p>}
+          {status && <p className="mt-3 text-sm text-[var(--accent-strong)] sm:text-base">{status}</p>}
         </form>
       </div>
     </AppShell>
@@ -61,4 +61,3 @@ function ProviderUploadPage() {
 }
 
 export default ProviderUploadPage;
-

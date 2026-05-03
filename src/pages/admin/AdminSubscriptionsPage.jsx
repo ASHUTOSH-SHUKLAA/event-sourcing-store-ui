@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import AppShell from '../../components/layout/AppShell';
-import UserPill from '../../components/common/UserPill';
+import HeaderActions from '../../components/common/HeaderActions';
 import EventTimeline from '../../components/subscription/EventTimeline';
 import {
   adminDowngradeSubscription,
@@ -10,27 +11,27 @@ import {
   getAdminUserEvents,
   getSubscriptionEvents,
 } from '../../api/subscriptionApi';
+import { getAdminUsers } from '../../api/appApi';
+import { Search } from 'lucide-react';
 
-const navItems = [
-  { to: '/admin/users', label: 'User Management' },
-  { to: '/admin/songs', label: 'Songs Monitoring' },
-  { to: '/admin/subscriptions', label: 'Subscription Monitoring' },
-];
+
 
 function AdminSubscriptionsPage() {
-  const [metrics, setMetrics] = useState(null);
+  const { searchTerm: search } = useOutletContext();
+  const [users, setUsers] = useState([]);
   const [subs, setSubs] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
   const [rowEvents, setRowEvents] = useState({});
   const [liveEvents, setLiveEvents] = useState([]);
   const [error, setError] = useState('');
+  const [page, setPage] = useState(1);
   const [pendingActionId, setPendingActionId] = useState('');
   const intervalRef = useRef(null);
 
-  const loadData = async () => {
+  const loadData = async (currentPage = page) => {
     try {
-      const [m, s] = await Promise.all([getAdminMetrics(), getAdminSubscriptions()]);
-      setMetrics(m.data);
+      const [u, s] = await Promise.all([getAdminUsers(currentPage, 50), getAdminSubscriptions(currentPage, 50)]);
+      setUsers(u || []);
       setSubs(s.data || []);
     } catch (err) {
       setError(err.message || 'Failed to load data');
@@ -46,11 +47,11 @@ function AdminSubscriptionsPage() {
   };
 
   useEffect(() => {
-    loadData();
+    loadData(page);
     loadLive();
     intervalRef.current = setInterval(loadLive, 30000);
     return () => clearInterval(intervalRef.current);
-  }, []);
+  }, [page]);
 
   const toggleRow = async (sub) => {
     if (expandedId === sub.aggregate_id) { setExpandedId(null); return; }
@@ -85,10 +86,22 @@ function AdminSubscriptionsPage() {
     }
   };
 
-  return (
-    <AppShell navItems={navItems} rightSlot={<UserPill label="A" />}>
-      <h2 className="text-2xl font-bold text-[var(--text-primary)]">Subscription Monitoring</h2>
-      <p className="mt-1 text-sm text-[var(--text-secondary)]">Track subscription status and event history.</p>
+  const premiumCount = subs.filter(s => s.plan === 'premium' && s.status === 'active').length;
+  const churnedCount = subs.filter(s => s.plan === 'free' || ['cancelled', 'inactive', 'churned'].includes(s.status?.toLowerCase())).length;
+  const mrr = premiumCount * 199;
+
+  const filteredSubs = subs.filter(s => 
+    [s.user_email, s.email, s.aggregate_id].some(v => 
+      (v || '').toLowerCase().includes(search.toLowerCase())
+    )
+  );
+
+      return (
+    <>
+      <div className="rounded-[34px] border border-[var(--border-strong)] bg-[var(--hero-glow)] p-6 shadow-[var(--shadow-card)]">
+        <h2 className="text-2xl font-bold text-[var(--text-primary)]">Subscription Monitoring</h2>
+        <p className="text-sm text-[var(--text-secondary)]">Track subscription performance and real-time business events.</p>
+      </div>
 
       {error && (
         <div className="mt-4 rounded-3xl border border-red-600/30 bg-[rgba(220,38,38,0.12)] px-4 py-3 text-sm text-red-200">{error}</div>
@@ -96,78 +109,72 @@ function AdminSubscriptionsPage() {
 
       <div className="mt-6 grid gap-4 sm:grid-cols-4">
         {[
-          { label: 'Total Subscribers', value: metrics?.total_subscribers ?? '—' },
-          { label: 'MRR', value: metrics ? `₹${metrics.mrr.toLocaleString('en-IN')}` : '—', accent: 'text-[var(--green-500)]' },
-          { label: 'Active', value: metrics?.active_count ?? '—', accent: 'text-[var(--green-500)]' },
-          { label: 'Cancelled', value: metrics?.cancelled_count ?? '—' },
-        ].map(({ label, value, accent }) => (
-          <div key={label} className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)]">
-            <p className={`text-2xl font-bold ${accent || 'text-[var(--text-primary)]'}`}>{value}</p>
-            <p className="mt-1 text-xs text-[var(--text-secondary)]">{label}</p>
+          { label: 'Total Users', value: users.length },
+          { label: 'Active Premium', value: premiumCount, highlight: true },
+          { label: 'Real MRR', value: `₹${mrr.toLocaleString('en-IN')}`, highlight: true },
+          { label: 'Total Churned', value: churnedCount },
+        ].map(({ label, value, highlight }) => (
+          <div key={label} className={`group relative overflow-hidden rounded-[28px] border-2 border-blue-400/20 p-5 transition-all duration-300 hover:scale-[1.02] ${highlight ? 'bg-gradient-to-br from-blue-600 to-indigo-600 shadow-[0_10px_30px_rgba(37,99,235,0.2)]' : 'bg-[var(--surface-elevated)] shadow-[var(--shadow-soft)]'}`}>
+            <p className={`text-[10px] font-black uppercase tracking-widest ${highlight ? 'text-blue-100/70' : 'text-[var(--text-secondary)]'}`}>{label}</p>
+            <p className={`mt-2 text-2xl font-black ${highlight ? 'text-white' : 'text-[var(--text-primary)]'}`}>{value}</p>
           </div>
         ))}
       </div>
 
-      <h3 className="mt-8 text-base font-bold text-[var(--text-primary)]">All Subscriptions</h3>
-      <div className="mt-3 overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-soft)]">
+      <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h3 className="text-base font-black uppercase tracking-widest text-[var(--text-primary)]">All Subscriptions</h3>
+      </div>
+      <div className="mt-4 overflow-hidden rounded-[30px] border-[6px] border-blue-600/30 bg-[var(--surface-elevated)] shadow-[0_20px_50px_rgba(37,99,235,0.15)]">
         <table className="w-full text-left">
           <thead>
-            <tr className="border-b border-[var(--border)] bg-[var(--surface-alt)]">
-              {['Email', 'Plan', 'Status', 'Started At', 'Action'].map((h) => (
-                <th key={h} className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">{h}</th>
+            <tr className="border-b border-blue-500/10 bg-[var(--surface-alt)]">
+              {['Subscriber Identity', 'Current Plan', 'Status', 'Started At'].map((h) => (
+                <th key={h} className="px-6 py-4 text-xs font-black uppercase tracking-widest text-[var(--text-secondary)]">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {subs.map((sub) => (
-              <Fragment key={sub.aggregate_id}>
-                <tr
-                  onClick={() => toggleRow(sub)}
-                  className="cursor-pointer border-b border-[var(--border)] hover:bg-[var(--surface-alt)] transition"
-                >
-                  <td className="px-5 py-3 text-sm text-[var(--text-primary)]">{sub.user_email}</td>
-                  <td className="px-5 py-3">
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${PLAN_BADGE[sub.plan] || 'bg-[var(--surface-alt)] text-[var(--text-secondary)]'}`}>{sub.plan}</span>
-                  </td>
-                  <td className="px-5 py-3">
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${STATUS_BADGE[sub.status] || 'bg-[var(--surface-alt)] text-[var(--text-secondary)]'}`}>{sub.status}</span>
-                  </td>
-                  <td className="px-5 py-3 text-sm text-[var(--text-secondary)]">{new Date(sub.started_at).toLocaleDateString()}</td>
-                  <td className="px-5 py-3">
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        updateSubscriptionPlan(sub, sub.plan === 'premium' ? 'free' : 'premium');
-                      }}
-                      disabled={pendingActionId === sub.aggregate_id}
-                      className="rounded-xl border border-[var(--border)] px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-alt)] disabled:opacity-60"
-                    >
-                      {pendingActionId === sub.aggregate_id
-                        ? 'Updating...'
-                        : sub.plan === 'premium'
-                          ? 'Downgrade'
-                          : 'Upgrade'}
-                    </button>
-                  </td>
-                </tr>
-                {expandedId === sub.aggregate_id && (
-                  <tr>
-                    <td colSpan={5} className="bg-[var(--surface-alt)] px-5 py-4">
-                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Event history</p>
-                      <EventTimeline events={rowEvents[sub.aggregate_id] || []} />
-                    </td>
-                  </tr>
-                )}
-              </Fragment>
+            {filteredSubs.map((sub, idx) => (
+              <tr
+                key={sub.aggregate_id || sub.user_email || idx}
+                className="border-b border-blue-500/5 transition hover:bg-[var(--surface)]"
+              >
+                <td className="px-6 py-4 text-sm font-bold text-[var(--text-primary)]">
+                  {sub.user_email || sub.email || 'Unknown Identity'}
+                </td>
+                <td className="px-6 py-4">
+                  <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${PLAN_BADGE[sub.plan] || 'bg-[var(--surface-alt)] text-[var(--text-secondary)]'}`}>{sub.plan}</span>
+                </td>
+                <td className="px-6 py-4">
+                  <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${STATUS_BADGE[sub.status] || 'bg-[var(--surface-alt)] text-[var(--text-secondary)]'}`}>{sub.status}</span>
+                </td>
+                <td className="px-6 py-4 text-sm font-medium text-[var(--text-secondary)]">{sub.started_at ? new Date(sub.started_at).toLocaleDateString() : '-'}</td>
+              </tr>
             ))}
-            {subs.length === 0 && (
+            {filteredSubs.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-5 py-10 text-center text-sm text-[var(--text-secondary)]">No subscription records yet</td>
+                <td colSpan={4} className="px-6 py-10 text-center text-sm text-[var(--text-secondary)]">No subscriptions found</td>
               </tr>
             )}
           </tbody>
         </table>
+      </div>
+      <div className="mt-4 flex items-center justify-between">
+        <button
+          onClick={() => setPage(p => Math.max(1, p - 1))}
+          disabled={page === 1}
+          className="rounded-full bg-[var(--surface-alt)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-hover)] disabled:opacity-50"
+        >
+          Previous
+        </button>
+        <span className="text-sm font-medium text-[var(--text-secondary)]">Page {page}</span>
+        <button
+          onClick={() => setPage(p => p + 1)}
+          disabled={subs.length < 50}
+          className="rounded-full bg-[var(--surface-alt)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-hover)] disabled:opacity-50"
+        >
+          Next
+        </button>
       </div>
 
       <h3 className="mt-8 text-base font-bold text-[var(--text-primary)]">
@@ -177,7 +184,7 @@ function AdminSubscriptionsPage() {
       <div className="mt-3">
         <EventTimeline events={liveEvents} />
       </div>
-    </AppShell>
+    </>
   );
 }
 
