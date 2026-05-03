@@ -1,23 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, KeyRound, PencilLine } from 'lucide-react';
+import { ChevronDown, KeyRound, PencilLine, CreditCard } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { changePassword, getProfile, updateProfile } from '../../api/userApi';
 import { useAuth } from '../../context/useAuth';
 
-const inputClass = 'h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] px-4 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--green-500)] focus:ring-2 focus:ring-[rgba(61,220,151,0.16)] transition';
+const inputClass = 'h-11 w-full rounded-2xl border border-[var(--border-strong)] bg-[var(--surface-elevated)] px-4 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-strong)] focus:ring-4 focus:ring-[var(--ring)]';
 
 function ProfileModal({ title, subtitle, children, onClose }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
-      <div className="w-full max-w-md rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow-card)]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-md">
+      <div className="w-full max-w-md rounded-[30px] border border-[var(--border-strong)] bg-[var(--surface-elevated)] p-6 shadow-[var(--shadow-card)]">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="text-xl font-bold text-[var(--text-primary)]">{title}</h3>
-            {subtitle && <p className="mt-1 text-sm text-[var(--text-secondary)]">{subtitle}</p>}
+            <h3 className="text-xl font-semibold text-[var(--text-primary)]">{title}</h3>
+            {subtitle && <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">{subtitle}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-[var(--border)] px-3 py-1 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]"
+            className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
           >
             Close
           </button>
@@ -29,15 +30,13 @@ function ProfileModal({ title, subtitle, children, onClose }) {
 }
 
 function UserPill({ label = 'U' }) {
-  const { logout } = useAuth();
+  const { logout, user, setUser } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [savingName, setSavingName] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
-  const [nameValue, setNameValue] = useState('');
+  const [nameValue, setNameValue] = useState(user?.display_name || '');
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -47,30 +46,6 @@ function UserPill({ label = 'U' }) {
   const [passwordError, setPasswordError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const wrapperRef = useRef(null);
-
-  useEffect(() => {
-    let active = true;
-
-    getProfile()
-      .then((response) => {
-        if (!active) {
-          return;
-        }
-        const nextProfile = response.data?.data ?? response.data;
-        setProfile(nextProfile);
-        setNameValue(nextProfile?.display_name || '');
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (active) {
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
 
   useEffect(() => {
     if (!menuOpen) {
@@ -88,8 +63,8 @@ function UserPill({ label = 'U' }) {
   }, [menuOpen]);
 
   const displayName = useMemo(
-    () => profile?.display_name?.trim() || profile?.email?.trim() || label,
-    [profile, label],
+    () => user?.display_name?.trim() || user?.email?.trim() || label,
+    [user, label],
   );
   const initial = (displayName[0] || label[0] || 'U').toUpperCase();
 
@@ -97,7 +72,7 @@ function UserPill({ label = 'U' }) {
     setMenuOpen(false);
     setNameError('');
     setSuccessMessage('');
-    setNameValue(profile?.display_name || '');
+    setNameValue(user?.display_name || '');
     setShowNameModal(true);
   };
 
@@ -122,7 +97,7 @@ function UserPill({ label = 'U' }) {
     try {
       const response = await updateProfile(trimmedName);
       const nextProfile = response.data?.data ?? response.data;
-      setProfile(nextProfile);
+      setUser(nextProfile);
       setSuccessMessage('Name updated successfully.');
       setShowNameModal(false);
     } catch (error) {
@@ -162,28 +137,25 @@ function UserPill({ label = 'U' }) {
 
   return (
     <>
-      <div className="relative" ref={wrapperRef}>
+      <div className="relative z-40" ref={wrapperRef}>
         <button
           type="button"
           onClick={() => setMenuOpen((prev) => !prev)}
-          className="flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 shadow-[var(--shadow-soft)] hover:bg-[var(--surface-alt)]"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent-strong)] text-sm font-bold text-white shadow-[var(--shadow-soft)] transition-all duration-300 hover:scale-110 hover:shadow-[var(--shadow-card)]"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--green-500)] text-sm font-bold text-black">
-            {initial}
-          </div>
-          <ChevronDown className={`h-4 w-4 text-[var(--text-secondary)] transition ${menuOpen ? 'rotate-180' : ''}`} />
+          {initial}
         </button>
 
         {menuOpen && (
-          <div className="absolute right-0 z-40 mt-3 w-72 rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[var(--shadow-card)]">
-            <div className="rounded-2xl bg-[var(--surface-alt)] p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Profile</p>
-              <p className="mt-2 text-base font-bold text-[var(--text-primary)]">{loading ? 'Loading...' : displayName}</p>
-              {profile?.email && <p className="text-sm text-[var(--text-secondary)]">{profile.email}</p>}
+          <div className="absolute right-0 z-40 mt-3 w-80 rounded-[28px] border border-[var(--border-strong)] bg-[var(--surface-elevated)] p-3 shadow-[var(--shadow-card)] backdrop-blur-xl">
+            <div className="rounded-[22px] bg-[var(--surface-highlight)] p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--text-secondary)]">Profile</p>
+              <p className="mt-3 text-lg font-semibold text-[var(--text-primary)]">{displayName}</p>
+              {user?.email && <p className="mt-1 text-sm text-[var(--text-secondary)]">{user.email}</p>}
             </div>
 
             {successMessage && (
-              <div className="mt-3 rounded-xl border border-[var(--border)] bg-[rgba(61,220,151,0.12)] px-3 py-2 text-sm text-[var(--green-500)]">
+              <div className="mt-3 rounded-2xl border border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-2 text-sm text-[var(--accent-strong)]">
                 {successMessage}
               </div>
             )}
@@ -192,23 +164,31 @@ function UserPill({ label = 'U' }) {
               <button
                 type="button"
                 onClick={openNameModal}
-                className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-alt)]"
+                className="flex w-full items-center gap-3 rounded-2xl border border-transparent px-3 py-3 text-left text-sm font-medium text-[var(--text-primary)] transition hover:border-[var(--border)] hover:bg-[var(--surface)]"
               >
-                <PencilLine className="h-4 w-4 text-[var(--green-500)]" />
-                Name
+                <PencilLine className="h-4 w-4 text-[var(--accent-strong)]" />
+                Edit name
               </button>
               <button
                 type="button"
                 onClick={openPasswordModal}
-                className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-alt)]"
+                className="flex w-full items-center gap-3 rounded-2xl border border-transparent px-3 py-3 text-left text-sm font-medium text-[var(--text-primary)] transition hover:border-[var(--border)] hover:bg-[var(--surface)]"
               >
-                <KeyRound className="h-4 w-4 text-[var(--green-500)]" />
-                Change Password
+                <KeyRound className="h-4 w-4 text-[var(--accent-strong)]" />
+                Change password
               </button>
+              <Link
+                to="/app/subscription"
+                onClick={() => setMenuOpen(false)}
+                className="flex w-full items-center gap-3 rounded-2xl border border-transparent px-3 py-3 text-left text-sm font-medium text-[var(--text-primary)] transition hover:border-[var(--border)] hover:bg-[var(--surface)]"
+              >
+                <CreditCard className="h-4 w-4 text-[var(--accent-strong)]" />
+                Manage Subscription
+              </Link>
               <button
                 type="button"
                 onClick={logout}
-                className="w-full rounded-2xl border border-[var(--border)] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-alt)]"
+                className="w-full rounded-2xl bg-[var(--accent-strong)] px-3 py-3 text-sm font-semibold text-white transition hover:brightness-110 active:scale-95 shadow-[var(--shadow-soft)]"
               >
                 Sign out
               </button>
@@ -218,7 +198,7 @@ function UserPill({ label = 'U' }) {
       </div>
 
       {showNameModal && (
-        <ProfileModal title="Update name" subtitle="This controls the initial and display name in your profile menu." onClose={() => setShowNameModal(false)}>
+        <ProfileModal title="Update name" subtitle="Change the display name shown in your workspace." onClose={() => setShowNameModal(false)}>
           <form className="space-y-4" onSubmit={handleSaveName}>
             <input
               value={nameValue}
@@ -226,13 +206,13 @@ function UserPill({ label = 'U' }) {
               placeholder="Your name"
               className={inputClass}
             />
-            {nameError && <p className="text-sm text-red-400">{nameError}</p>}
+            {nameError && <p className="text-sm text-red-500">{nameError}</p>}
             <button
               type="submit"
               disabled={savingName}
-              className="w-full rounded-xl bg-[var(--green-500)] px-4 py-3 text-sm font-semibold text-black hover:bg-[var(--green-600)] disabled:opacity-60"
+              className="w-full rounded-2xl bg-[var(--accent-strong)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent)] disabled:opacity-60"
             >
-              {savingName ? 'Saving...' : 'Save Name'}
+              {savingName ? 'Saving...' : 'Save name'}
             </button>
           </form>
         </ProfileModal>
@@ -262,13 +242,13 @@ function UserPill({ label = 'U' }) {
               placeholder="Confirm password"
               className={inputClass}
             />
-            {passwordError && <p className="text-sm text-red-400">{passwordError}</p>}
+            {passwordError && <p className="text-sm text-red-500">{passwordError}</p>}
             <button
               type="submit"
               disabled={savingPassword}
-              className="w-full rounded-xl bg-[var(--green-500)] px-4 py-3 text-sm font-semibold text-black hover:bg-[var(--green-600)] disabled:opacity-60"
+              className="w-full rounded-2xl bg-[var(--accent-strong)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[var(--accent)] disabled:opacity-60"
             >
-              {savingPassword ? 'Updating...' : 'Update Password'}
+              {savingPassword ? 'Updating...' : 'Update password'}
             </button>
           </form>
         </ProfileModal>
