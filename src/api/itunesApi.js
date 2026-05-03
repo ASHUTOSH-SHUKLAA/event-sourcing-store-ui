@@ -1,25 +1,6 @@
-/**
- * iTunes Search API client.
- * No authentication required. No audio playback.
- * Uses native fetch — no dependency on authApi.js.
- *
- * @typedef {Object} Track
- * @property {number} id       - iTunes trackId
- * @property {string} title    - trackName
- * @property {string} artist   - artistName
- * @property {string} album    - collectionName
- * @property {string} artwork  - artworkUrl100
- * @property {number} duration - trackTimeMillis / 1000 (seconds)
- */
-
 const BASE_URL = 'https://itunes.apple.com/search';
 const TIMEOUT_MS = 5000;
 
-/**
- * Normalise a raw iTunes result object into a Track.
- * @param {Object} item
- * @returns {Track}
- */
 function enhanceArtworkUrl(url) {
   if (!url) {
     return '';

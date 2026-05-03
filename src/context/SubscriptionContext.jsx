@@ -1,7 +1,13 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { downgradeSubscription, getCurrentSubscription, upgradeSubscription } from '../api/subscriptionApi';
-
-const SubscriptionContext = createContext(null);
+import { useCallback, useEffect, useState } from 'react';
+import {
+  downgradeSubscription,
+  getCurrentSubscription,
+  upgradeSubscription,
+  pauseSubscription,
+  resumeSubscription,
+} from '../api/subscriptionApi';
+import { SubscriptionContext } from './SubscriptionContextValue';
+import { useAuth } from './useAuth';
 
 const INITIAL = { plan: 'free', status: 'active', price: 0, version: 0 };
 
@@ -9,9 +15,10 @@ export function SubscriptionProvider({ children }) {
   const [subscription, setSubscription] = useState(INITIAL);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { isAuthenticated, isBootstrapping } = useAuth();
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
+  const refresh = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     setError(null);
     try {
       const res = await getCurrentSubscription();
@@ -19,57 +26,82 @@ export function SubscriptionProvider({ children }) {
     } catch (err) {
       setError(err.message || 'Failed to load subscription');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    if (isAuthenticated && !isBootstrapping) {
+      refresh();
+    } else if (!isBootstrapping) {
+      setLoading(false);
+      setSubscription(INITIAL);
+    }
+  }, [isAuthenticated, isBootstrapping, refresh]);
 
-  const upgrade = useCallback(async (fireToast) => {
+  const upgrade = useCallback(async () => {
     const previousState = subscription;
-    // Optimistic update
-    setSubscription({ plan: 'premium', status: 'active', price: 199, version: previousState.version + 1 });
+    setSubscription({ ...previousState, plan: 'premium', status: 'active', price: 199 });
     setError(null);
     try {
       await upgradeSubscription();
-      if (fireToast) fireToast('Event fired: PlanUpgraded');
-      await refresh();
+      // Give the background processor a moment to update the DB
+      setTimeout(() => refresh(true), 500);
     } catch (err) {
-      // Rollback
       setSubscription(previousState);
       setError(err.message || 'Upgrade failed. Please try again.');
     }
   }, [subscription, refresh]);
 
-  const downgrade = useCallback(async (fireToast) => {
+  const downgrade = useCallback(async () => {
     const previousState = subscription;
-    setSubscription({ plan: 'free', status: 'active', price: 0, version: previousState.version + 1 });
+    setSubscription({ ...previousState, plan: 'free', status: 'active' });
     setError(null);
     try {
       await downgradeSubscription();
-      if (fireToast) fireToast('Event fired: PlanDowngraded');
-      await refresh();
+      // Give the background processor a moment to update the DB
+      setTimeout(() => refresh(true), 500);
     } catch (err) {
       setSubscription(previousState);
       setError(err.message || 'Downgrade failed. Please try again.');
     }
   }, [subscription, refresh]);
 
-  const isPremium = subscription.plan === 'premium';
+  const pause = useCallback(async () => {
+    const previousState = subscription;
+    setSubscription({ ...previousState, status: 'paused' });
+    setError(null);
+    try {
+      await pauseSubscription();
+      // Give the background processor a moment to update the DB
+      setTimeout(() => refresh(true), 500);
+    } catch (err) {
+      setSubscription(previousState);
+      setError(err.message || 'Could not pause subscription. Please try again.');
+    }
+  }, [subscription, refresh]);
+
+  const resume = useCallback(async () => {
+    const previousState = subscription;
+    setSubscription({ ...previousState, status: 'active' });
+    setError(null);
+    try {
+      await resumeSubscription();
+      // Give the background processor a moment to update the DB
+      setTimeout(() => refresh(true), 500);
+    } catch (err) {
+      setSubscription(previousState);
+      setError(err.message || 'Could not resume subscription. Please try again.');
+    }
+  }, [subscription, refresh]);
+
+  const isPremium = subscription.plan === 'premium' && subscription.status === 'active';
 
   return (
-    <SubscriptionContext.Provider value={{ subscription, isPremium, loading, error, upgrade, downgrade, refresh }}>
+    <SubscriptionContext.Provider
+      value={{ subscription, isPremium, loading, error, upgrade, downgrade, pause, resume, refresh }}
+    >
       {children}
     </SubscriptionContext.Provider>
   );
 }
-
-export function useSubscription() {
-  const ctx = useContext(SubscriptionContext);
-  if (!ctx) throw new Error('useSubscription must be used inside SubscriptionProvider');
-  return ctx;
-}
-
-export default SubscriptionContext;

@@ -1,7 +1,9 @@
 import { apiClient } from './authApi';
 
 export const getCatalogSongs = async () => {
-  const response = await apiClient.get('/api/v1/catalog/songs');
+  const response = await apiClient.get('/api/v1/catalog/songs', {
+    params: { _t: Date.now() }
+  });
   return response.data.data.items || [];
 };
 

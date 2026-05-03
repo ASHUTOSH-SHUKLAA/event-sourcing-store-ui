@@ -49,7 +49,8 @@ apiClient.interceptors.response.use(
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url.includes('/auth/refresh')
+      !originalRequest.url.includes('/auth/refresh') &&
+      window.location.pathname !== '/login'
     ) {
       if (isRefreshing) {
         // Queue the request until the ongoing refresh completes
@@ -125,7 +126,11 @@ export const serviceLogin = (email, password) =>
  * withCredentials ensures the cookie is sent automatically.
  */
 export const refresh = () =>
-  apiClient.post('/api/v1/auth/refresh');
+  apiClient.post('/api/v1/auth/refresh').then(res => {
+    // If backend returns 204 No Content, it means no session cookie exists.
+    if (res.status === 204) return { data: { data: { access_token: null } } };
+    return res;
+  });
 
 /**
  * Log out — clears the in-memory access token and the refresh cookie.
