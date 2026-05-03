@@ -1,17 +1,17 @@
 const REQUIRED_FIELDS = ['id', 'aggregate_id', 'event_type', 'version', 'payload', 'created_at'];
 
 const BADGE = {
-  SubscriptionCreated: 'bg-[rgba(61,220,151,0.12)] text-[var(--green-500)]',
-  PlanUpgraded: 'bg-[rgba(61,220,151,0.12)] text-[var(--green-500)]',
-  PaymentSucceeded: 'bg-[rgba(61,220,151,0.12)] text-[var(--green-500)]',
-  PaymentFailed: 'bg-[rgba(239,68,68,0.16)] text-red-400',
-  SongPlayed: 'bg-[rgba(59,130,246,0.14)] text-sky-300',
+  SubscriptionCreated: 'bg-[var(--accent-soft)] text-[var(--accent-strong)]',
+  PlanUpgraded: 'bg-[var(--accent-soft)] text-[var(--accent-strong)]',
+  PaymentSucceeded: 'bg-[var(--accent-soft)] text-[var(--accent-strong)]',
+  PaymentFailed: 'bg-[var(--danger-soft)] text-red-500',
+  SongPlayed: 'bg-[var(--info-soft)] text-sky-500',
 };
 
 function EventTimeline({ events = [] }) {
-  const valid = events.filter((e) => {
-    if (!REQUIRED_FIELDS.every((f) => f in e)) {
-      console.warn('[EventTimeline] Skipping invalid event:', e);
+  const valid = events.filter((event) => {
+    if (!REQUIRED_FIELDS.every((field) => field in event)) {
+      console.warn('[EventTimeline] Skipping invalid event:', event);
       return false;
     }
     return true;
@@ -26,25 +26,27 @@ function EventTimeline({ events = [] }) {
   return (
     <div className="space-y-3">
       {sorted.map((event) => {
-        const badge = BADGE[event.event_type] || 'bg-[rgba(148,163,184,0.12)] text-[var(--text-secondary)]';
+        const badge = BADGE[event.event_type] || 'bg-[var(--surface)] text-[var(--text-secondary)]';
         const payloadStr = JSON.stringify(event.payload);
-        const summary = payloadStr.length > 80 ? payloadStr.slice(0, 80) + '…' : payloadStr;
+        const summary = payloadStr.length > 80 ? `${payloadStr.slice(0, 80)}...` : payloadStr;
 
         return (
-          <div key={event.id} className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 shadow-[var(--shadow-soft)]">
+          <div key={event.id} className="rounded-[28px] border border-[var(--border-strong)] bg-[var(--surface-elevated)] px-4 py-4 shadow-[var(--shadow-soft)]">
             <div className="flex flex-wrap items-center gap-2">
-              <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge}`}>
+              <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${badge}`}>
                 {event.event_type}
               </span>
               <span className="text-xs text-[var(--text-secondary)]">
                 {new Date(event.created_at).toLocaleString()}
               </span>
-              <span className="font-mono text-xs text-[var(--green-500)]">
+              <span className="rounded-full bg-[var(--surface)] px-2 py-1 font-mono text-[11px] text-[var(--text-muted)]">
                 #{event.aggregate_id.slice(0, 8)}
               </span>
               <span className="text-xs text-[var(--text-secondary)]">v{event.version}</span>
             </div>
-            <p className="mt-2 font-mono text-xs text-[var(--text-secondary)] break-all">{summary}</p>
+            <p className="mt-3 break-all rounded-[20px] bg-[var(--surface)] px-3 py-3 font-mono text-xs leading-6 text-[var(--text-secondary)]">
+              {summary}
+            </p>
           </div>
         );
       })}

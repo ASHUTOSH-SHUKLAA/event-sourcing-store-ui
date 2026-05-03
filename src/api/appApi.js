@@ -1,7 +1,7 @@
 import { apiClient } from './authApi';
 
 export const getLikedSongs = async () => {
-  const response = await apiClient.get('/api/v1/liked-songs');
+  const response = await apiClient.get(`/api/v1/liked-songs?_t=${Date.now()}`);
   return response.data.data.items || [];
 };
 
@@ -21,23 +21,7 @@ export const unlikeSong = async (songId) => {
   return response.data.data;
 };
 
-export const getPlaylists = async () => {
-  const response = await apiClient.get('/api/v1/playlists');
-  return response.data.data.items || [];
-};
 
-export const getPlaylistById = async (id) => {
-  const response = await apiClient.get(`/api/v1/playlists/${id}`);
-  return response.data.data;
-};
-
-export const createPlaylist = async (name, songIds = []) => {
-  const response = await apiClient.post('/api/v1/playlists', {
-    name,
-    song_ids: songIds,
-  });
-  return response.data.data;
-};
 
 export const getPlayerState = async () => {
   const response = await apiClient.get('/api/v1/player/state');
@@ -52,19 +36,28 @@ export const postPlayerEvent = async (eventType, songId) => {
   return response.data.data;
 };
 
-export const getAdminUsers = async () => {
-  const response = await apiClient.get('/api/v1/admin/users');
-  return response.data.data.items || [];
+export const getAdminUsers = async (page = 1, limit = 50) => {
+  const response = await apiClient.get(`/api/v1/admin/users?page=${page}&limit=${limit}`);
+  const data = response.data?.data;
+  if (Array.isArray(data)) return data;
+  if (data?.items && Array.isArray(data.items)) return data.items;
+  return [];
 };
 
-export const getAdminSongs = async () => {
-  const response = await apiClient.get('/api/v1/admin/songs');
-  return response.data.data.items || [];
+export const getAdminSongs = async (page = 1, limit = 50) => {
+  const response = await apiClient.get(`/api/v1/admin/songs?page=${page}&limit=${limit}`);
+  const data = response.data?.data;
+  if (Array.isArray(data)) return data;
+  if (data?.items && Array.isArray(data.items)) return data.items;
+  return [];
 };
 
-export const getAdminSubscriptions = async () => {
-  const response = await apiClient.get('/api/v1/admin/subscriptions');
-  return response.data.data.items || [];
+export const getAdminSubscriptions = async (page = 1, limit = 50) => {
+  const response = await apiClient.get(`/api/v1/admin/subscriptions?page=${page}&limit=${limit}`);
+  const data = response.data?.data;
+  if (Array.isArray(data)) return data;
+  if (data?.items && Array.isArray(data.items)) return data.items;
+  return [];
 };
 
 export const getAdminHealth = async () => {
@@ -72,12 +65,9 @@ export const getAdminHealth = async () => {
   return response.data.data;
 };
 
-export const uploadProviderSong = async (payload) => {
-  const response = await apiClient.post('/api/v1/provider/upload', payload);
-  return response.data.data;
+export const getAdminUserEvents = async (userId, page = 1, limit = 100) => {
+  const response = await apiClient.get(`/api/v1/admin/users/${userId}/events?page=${page}&limit=${limit}`);
+  return response.data?.data || [];
 };
 
-export const getProviderSongs = async () => {
-  const response = await apiClient.get('/api/v1/provider/songs');
-  return response.data.data.items || [];
-};
+

@@ -1,9 +1,9 @@
 /**
  * Pure event sourcing reducer for subscription state.
- * Used by EventLogPage, EventDebuggerPage, and StateReplayViewer.
+ * Used by EventLogPage to replay subscription history.
  *
  * @typedef {'free'|'premium'} Plan
- * @typedef {'active'|'cancelled'|'payment_failed'} SubscriptionStatus
+ * @typedef {'active'|'paused'|'cancelled'|'payment_failed'} SubscriptionStatus
  *
  * @typedef {Object} SubscriptionState
  * @property {Plan} plan
@@ -36,6 +36,16 @@ export function applyEvent(state, event) {
     case 'PlanUpgraded':
       return { plan: 'premium', status: 'active', price: 199, version: event.version };
 
+    case 'PlanDowngraded':
+      // Downgrade is now immediate (pro-rata charge collected on backend)
+      return { plan: 'free', status: 'active', price: 0, version: event.version };
+
+    case 'SubscriptionPaused':
+      return { ...state, status: 'paused', version: event.version };
+
+    case 'SubscriptionResumed':
+      return { ...state, status: 'active', version: event.version };
+
     case 'PaymentSucceeded':
       return { ...state, status: 'active', version: event.version };
 
@@ -43,7 +53,7 @@ export function applyEvent(state, event) {
       return { ...state, status: 'payment_failed', version: event.version };
 
     default:
-      console.warn('[subscriptionReducer] Unknown event type:', event.event_type);
+      // Silently pass through unknown events (song plays, etc.) without warning
       return state;
   }
 }
